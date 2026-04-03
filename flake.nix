@@ -5,7 +5,7 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
   };
 
-  outputs = { self , nixpkgs ,... }:
+  outputs = { self , nixpkgs, ... }:
   let
     system = "x86_64-linux";
     pkgs = import nixpkgs { inherit system; };
@@ -24,6 +24,11 @@
         code .
         fish
       '';
+    };
+
+    apps.${system}.default = {
+      type = "app";
+      program = "${pkgs}";
     };
   };
 }

@@ -1,6 +1,8 @@
 import musicbrainzngs as mb
 from youtubesearchpython import VideosSearch as search_youtube
+from yt_dlp.utils import DownloadError
 import yt_dlp
+
 from urllib.parse import quote
 from mutagen.easyid3 import EasyID3
 import os
@@ -25,8 +27,8 @@ if __name__ == '__main__':
     artist = input('Artist: ')
     album = input('Album: ')
     do_increment = input('Increment filenames (y/n): ') == 'y'
-
-    directory = f'{artist}/{album}'
+    target_directory = input('Output directory (MUST BE ABSOLUTE, leave blank for current): ')
+    directory = os.path.abspath(f'{target_directory}/{artist}/{album}')
     temp_file_path = f'{directory}/temp_name_before_sanitization.mp3'
     
     yt_dlp_options = {
@@ -61,10 +63,21 @@ if __name__ == '__main__':
                 track_name = sanitize_file_name(track['recording']['title'])
                 response = search_youtube(f'{track_name} by {artist}', limit=1)
                 video = response.result()['result'][0]
-                ytdl.download(video['link'])
-
+                disk_number = medium['position']
+                track_number = str(track['position']).zfill(2)
+                url = video['link']
+                
+                downloaded = False
+                while not downloaded:
+                    try:
+                        ytdl.download(url)
+                        downloaded = True
+                    except DownloadError:
+                        print(f'\n{track_name} could not be downloaded from the url {video['link']}')
+                        url = input('New URL: ')
+                    
                 if do_increment:
-                    prefix = f'[{medium['position']}, {str(track['position'].zfill(2))}]'
+                    prefix = f'[{disk_number}, {track_number}]'
                     file_name = f'{directory}/{prefix} {track_name}.mp3'
                 else:
                     file_name = f'{directory}/{track_name}.mp3'
